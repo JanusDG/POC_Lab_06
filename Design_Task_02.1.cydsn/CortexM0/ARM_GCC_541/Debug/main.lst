@@ -1,0 +1,1958 @@
+ARM GAS  C:\Users\JANUSD~1\AppData\Local\Temp\ccEwIFdT.s 			page 1
+
+
+   1              		.syntax unified
+   2              		.cpu cortex-m0
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 1
+  11              		.eabi_attribute 34, 0
+  12              		.eabi_attribute 18, 4
+  13              		.thumb
+  14              		.syntax unified
+  15              		.file	"main.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.section	.text.isr_100Hz,"ax",%progbits
+  20              		.align	2
+  21              		.global	isr_100Hz
+  22              		.code	16
+  23              		.thumb_func
+  24              		.type	isr_100Hz, %function
+  25              	isr_100Hz:
+  26              	.LFB39:
+  27              		.file 1 "main.c"
+   1:main.c        **** #include "project.h"
+   2:main.c        **** #include "stdio.h"
+   3:main.c        **** 
+   4:main.c        **** #define STR_LEN     (80u)
+   5:main.c        **** #define CHANNEL_0   (0u)
+   6:main.c        **** 
+   7:main.c        **** void out7seg(uint16);
+   8:main.c        **** 
+   9:main.c        **** uint16 indyk[4]         = {0x10FF,0x20FF,0x40FF,0x80FF};
+  10:main.c        **** const uint8 KOD7[10]    = {0x03,0x9F,0x25,0x0D,0x99,0x49,0x41,0x1F,0x01,0x09};
+  11:main.c        **** 
+  12:main.c        **** void out7seg(uint16 data);
+  13:main.c        **** CY_ISR_PROTO(isr_100Hz);
+  14:main.c        **** 
+  15:main.c        **** uint16 temperature;
+  16:main.c        **** 
+  17:main.c        **** 
+  18:main.c        **** uint16_t My_CountsTo_mVolts(int channel, uint16 adcResult){
+  19:main.c        ****     uint16 adcResult_mV = adcResult;
+  20:main.c        ****     adcResult_mV = adcResult - ADC_SAR_Seq_offset[channel];
+  21:main.c        ****     adcResult_mV = adcResult_mV * (ADC_SAR_Seq_10MV_COUNTS/ADC_SAR_Seq_countsPer10Volt[channel]);
+  22:main.c        ****     
+  23:main.c        ****     return adcResult_mV;
+  24:main.c        **** }
+  25:main.c        **** 
+  26:main.c        **** int main(void)
+  27:main.c        **** {
+  28:main.c        ****     char str[STR_LEN];
+  29:main.c        ****     uint16 adcResult;
+  30:main.c        ****     float adcResult_V;
+ARM GAS  C:\Users\JANUSD~1\AppData\Local\Temp\ccEwIFdT.s 			page 2
+
+
+  31:main.c        ****     int16 adcResult_mV;
+  32:main.c        ****     int32 adcResult_uV;
+  33:main.c        ****     uint16 my_adcResult_mV;
+  34:main.c        ****     
+  35:main.c        ****     CyGlobalIntEnable; /* Enable global interrupts. */
+  36:main.c        **** 
+  37:main.c        ****     SPIM_Start();
+  38:main.c        ****     isr_100Hz_StartEx(isr_100Hz);
+  39:main.c        ****     
+  40:main.c        ****     ADC_SAR_Seq_Start();
+  41:main.c        ****     UART_Start();
+  42:main.c        ****     UART_UartPutString("Init stage is done \r\n");
+  43:main.c        **** 
+  44:main.c        ****     UART_UartPutString("Starting ADC (FreeRunning mode only) \r\n"); 
+  45:main.c        ****     ADC_SAR_Seq_StartConvert();
+  46:main.c        ****     
+  47:main.c        ****     for(;;)
+  48:main.c        ****     {
+  49:main.c        ****         CyDelay(1000u);
+  50:main.c        ****         ADC_SAR_Seq_IsEndConversion(ADC_SAR_Seq_WAIT_FOR_RESULT);
+  51:main.c        ****         
+  52:main.c        ****         adcResult = ADC_SAR_Seq_GetResult16(CHANNEL_0);
+  53:main.c        ****         adcResult_V = ADC_SAR_Seq_CountsTo_Volts(CHANNEL_0, adcResult);
+  54:main.c        ****         adcResult_mV = ADC_SAR_Seq_CountsTo_mVolts(CHANNEL_0, adcResult);
+  55:main.c        ****         adcResult_uV = ADC_SAR_Seq_CountsTo_uVolts(CHANNEL_0, adcResult);
+  56:main.c        ****         
+  57:main.c        ****         temperature = adcResult_mV / 10; // 10 mV per C
+  58:main.c        ****         out7seg(temperature);
+  59:main.c        ****         
+  60:main.c        ****         CyDelay(1000u);
+  61:main.c        ****         my_adcResult_mV = My_CountsTo_mVolts(CHANNEL_0, adcResult);
+  62:main.c        ****         temperature = adcResult_mV / 10; // 10 mV per C
+  63:main.c        ****         out7seg(temperature);
+  64:main.c        ****         
+  65:main.c        ****         /* Send data through UART
+  66:main.c        ****         sprintf(str, "n = 0x%04x; V = %dmV  T = %d C  \r\n", (unsigned short)adcResult, adcResult_m
+  67:main.c        ****         UART_UartPutString(str); */
+  68:main.c        ****     }
+  69:main.c        **** }
+  70:main.c        **** 
+  71:main.c        **** 
+  72:main.c        **** void out7seg(uint16 data)
+  73:main.c        **** {
+  74:main.c        ****     uint8 i;
+  75:main.c        ****     
+  76:main.c        ****     for (i = 0; i < 4; i++)
+  77:main.c        ****     {
+  78:main.c        ****         indyk[i] &= 0xFF00;
+  79:main.c        ****         indyk[i] |= (uint16)KOD7[data % 10];
+  80:main.c        ****         data /= 10;
+  81:main.c        ****         if (data == 0) break;
+  82:main.c        ****     }
+  83:main.c        ****     
+  84:main.c        ****     for (i++; i < 4; i++)
+  85:main.c        ****     {
+  86:main.c        ****         indyk[i] |= 0x00FF;
+  87:main.c        ****     }
+ARM GAS  C:\Users\JANUSD~1\AppData\Local\Temp\ccEwIFdT.s 			page 3
+
+
+  88:main.c        **** }
+  89:main.c        **** 
+  90:main.c        **** CY_ISR(isr_100Hz)
+  91:main.c        **** {
+  28              		.loc 1 91 0
+  29              		.cfi_startproc
+  30              		@ args = 0, pretend = 0, frame = 0
+  31              		@ frame_needed = 0, uses_anonymous_args = 0
+  32 0000 10B5     		push	{r4, lr}
+  33              		.cfi_def_cfa_offset 8
+  34              		.cfi_offset 4, -8
+  35              		.cfi_offset 14, -4
+  92:main.c        ****     static uint8 N_indyk = 0u;
+  93:main.c        ****     
+  94:main.c        ****     SPIM_WriteTxData(indyk[N_indyk]);
+  36              		.loc 1 94 0
+  37 0002 064C     		ldr	r4, .L2
+  38 0004 2378     		ldrb	r3, [r4]
+  39 0006 5B00     		lsls	r3, r3, #1
+  40 0008 054A     		ldr	r2, .L2+4
+  41 000a 985A     		ldrh	r0, [r3, r2]
+  42 000c FFF7FEFF 		bl	SPIM_WriteTxData
+  43              	.LVL0:
+  95:main.c        ****     
+  96:main.c        ****     N_indyk++;
+  44              		.loc 1 96 0
+  45 0010 2378     		ldrb	r3, [r4]
+  46 0012 0133     		adds	r3, r3, #1
+  97:main.c        ****     N_indyk &= 3;    
+  47              		.loc 1 97 0
+  48 0014 0322     		movs	r2, #3
+  49 0016 1340     		ands	r3, r2
+  50 0018 2370     		strb	r3, [r4]
+  98:main.c        **** }
+  51              		.loc 1 98 0
+  52              		@ sp needed
+  53 001a 10BD     		pop	{r4, pc}
+  54              	.L3:
+  55              		.align	2
+  56              	.L2:
+  57 001c 00000000 		.word	.LANCHOR1
+  58 0020 00000000 		.word	.LANCHOR0
+  59              		.cfi_endproc
+  60              	.LFE39:
+  61              		.size	isr_100Hz, .-isr_100Hz
+  62              		.global	__aeabi_idiv
+  63              		.section	.text.My_CountsTo_mVolts,"ax",%progbits
+  64              		.align	2
+  65              		.global	My_CountsTo_mVolts
+  66              		.code	16
+  67              		.thumb_func
+  68              		.type	My_CountsTo_mVolts, %function
+  69              	My_CountsTo_mVolts:
+  70              	.LFB36:
+  18:main.c        ****     uint16 adcResult_mV = adcResult;
+  71              		.loc 1 18 0
+  72              		.cfi_startproc
+ARM GAS  C:\Users\JANUSD~1\AppData\Local\Temp\ccEwIFdT.s 			page 4
+
+
+  73              		@ args = 0, pretend = 0, frame = 0
+  74              		@ frame_needed = 0, uses_anonymous_args = 0
+  75              	.LVL1:
+  76 0000 10B5     		push	{r4, lr}
+  77              		.cfi_def_cfa_offset 8
+  78              		.cfi_offset 4, -8
+  79              		.cfi_offset 14, -4
+  80              	.LVL2:
+  20:main.c        ****     adcResult_mV = adcResult_mV * (ADC_SAR_Seq_10MV_COUNTS/ADC_SAR_Seq_countsPer10Volt[channel]);
+  81              		.loc 1 20 0
+  82 0002 4200     		lsls	r2, r0, #1
+  83 0004 064B     		ldr	r3, .L5
+  84 0006 D45A     		ldrh	r4, [r2, r3]
+  85 0008 24B2     		sxth	r4, r4
+  86 000a 0C1B     		subs	r4, r1, r4
+  87 000c A4B2     		uxth	r4, r4
+  88              	.LVL3:
+  21:main.c        ****     
+  89              		.loc 1 21 0
+  90 000e 8000     		lsls	r0, r0, #2
+  91              	.LVL4:
+  92 0010 044B     		ldr	r3, .L5+4
+  93 0012 C158     		ldr	r1, [r0, r3]
+  94              	.LVL5:
+  95 0014 0448     		ldr	r0, .L5+8
+  96 0016 FFF7FEFF 		bl	__aeabi_idiv
+  97              	.LVL6:
+  98 001a 6043     		muls	r0, r4
+  99 001c 80B2     		uxth	r0, r0
+ 100              	.LVL7:
+  24:main.c        **** 
+ 101              		.loc 1 24 0
+ 102              		@ sp needed
+ 103 001e 10BD     		pop	{r4, pc}
+ 104              	.L6:
+ 105              		.align	2
+ 106              	.L5:
+ 107 0020 00000000 		.word	ADC_SAR_Seq_offset
+ 108 0024 00000000 		.word	ADC_SAR_Seq_countsPer10Volt
+ 109 0028 10270000 		.word	10000
+ 110              		.cfi_endproc
+ 111              	.LFE36:
+ 112              		.size	My_CountsTo_mVolts, .-My_CountsTo_mVolts
+ 113              		.global	__aeabi_uidivmod
+ 114              		.global	__aeabi_uidiv
+ 115              		.section	.text.out7seg,"ax",%progbits
+ 116              		.align	2
+ 117              		.global	out7seg
+ 118              		.code	16
+ 119              		.thumb_func
+ 120              		.type	out7seg, %function
+ 121              	out7seg:
+ 122              	.LFB38:
+  73:main.c        ****     uint8 i;
+ 123              		.loc 1 73 0
+ 124              		.cfi_startproc
+ 125              		@ args = 0, pretend = 0, frame = 0
+ARM GAS  C:\Users\JANUSD~1\AppData\Local\Temp\ccEwIFdT.s 			page 5
+
+
+ 126              		@ frame_needed = 0, uses_anonymous_args = 0
+ 127              	.LVL8:
+ 128 0000 F0B5     		push	{r4, r5, r6, r7, lr}
+ 129              		.cfi_def_cfa_offset 20
+ 130              		.cfi_offset 4, -20
+ 131              		.cfi_offset 5, -16
+ 132              		.cfi_offset 6, -12
+ 133              		.cfi_offset 7, -8
+ 134              		.cfi_offset 14, -4
+ 135 0002 4746     		mov	r7, r8
+ 136 0004 80B4     		push	{r7}
+ 137              		.cfi_def_cfa_offset 24
+ 138              		.cfi_offset 8, -24
+ 139 0006 0500     		movs	r5, r0
+ 140              	.LVL9:
+  76:main.c        ****     {
+ 141              		.loc 1 76 0
+ 142 0008 0024     		movs	r4, #0
+ 143 000a 1AE0     		b	.L8
+ 144              	.LVL10:
+ 145              	.L10:
+  78:main.c        ****         indyk[i] |= (uint16)KOD7[data % 10];
+ 146              		.loc 1 78 0
+ 147 000c 164F     		ldr	r7, .L13
+ 148 000e 6300     		lsls	r3, r4, #1
+ 149 0010 9846     		mov	r8, r3
+ 150 0012 DE5B     		ldrh	r6, [r3, r7]
+ 151 0014 FF23     		movs	r3, #255
+ 152 0016 9E43     		bics	r6, r3
+ 153 0018 4346     		mov	r3, r8
+ 154 001a DE53     		strh	r6, [r3, r7]
+  79:main.c        ****         data /= 10;
+ 155              		.loc 1 79 0
+ 156 001c 0A21     		movs	r1, #10
+ 157 001e 2800     		movs	r0, r5
+ 158 0020 FFF7FEFF 		bl	__aeabi_uidivmod
+ 159              	.LVL11:
+ 160 0024 89B2     		uxth	r1, r1
+ 161 0026 114B     		ldr	r3, .L13+4
+ 162 0028 5B5C     		ldrb	r3, [r3, r1]
+ 163 002a 1E43     		orrs	r6, r3
+ 164 002c 4346     		mov	r3, r8
+ 165 002e DE53     		strh	r6, [r3, r7]
+  80:main.c        ****         if (data == 0) break;
+ 166              		.loc 1 80 0
+ 167 0030 0A21     		movs	r1, #10
+ 168 0032 2800     		movs	r0, r5
+ 169 0034 FFF7FEFF 		bl	__aeabi_uidiv
+ 170              	.LVL12:
+ 171 0038 85B2     		uxth	r5, r0
+ 172              	.LVL13:
+  81:main.c        ****     }
+ 173              		.loc 1 81 0
+ 174 003a 002D     		cmp	r5, #0
+ 175 003c 03D0     		beq	.L9
+  76:main.c        ****     {
+ 176              		.loc 1 76 0 discriminator 2
+ARM GAS  C:\Users\JANUSD~1\AppData\Local\Temp\ccEwIFdT.s 			page 6
+
+
+ 177 003e 0134     		adds	r4, r4, #1
+ 178              	.LVL14:
+ 179 0040 E4B2     		uxtb	r4, r4
+ 180              	.LVL15:
+ 181              	.L8:
+  76:main.c        ****     {
+ 182              		.loc 1 76 0 is_stmt 0 discriminator 1
+ 183 0042 032C     		cmp	r4, #3
+ 184 0044 E2D9     		bls	.L10
+ 185              	.L9:
+  84:main.c        ****     {
+ 186              		.loc 1 84 0 is_stmt 1
+ 187 0046 0134     		adds	r4, r4, #1
+ 188              	.LVL16:
+ 189 0048 E3B2     		uxtb	r3, r4
+ 190              	.LVL17:
+ 191 004a 07E0     		b	.L11
+ 192              	.L12:
+  86:main.c        ****     }
+ 193              		.loc 1 86 0 discriminator 3
+ 194 004c 0649     		ldr	r1, .L13
+ 195 004e 5800     		lsls	r0, r3, #1
+ 196 0050 445A     		ldrh	r4, [r0, r1]
+ 197 0052 FF22     		movs	r2, #255
+ 198 0054 2243     		orrs	r2, r4
+ 199 0056 4252     		strh	r2, [r0, r1]
+  84:main.c        ****     {
+ 200              		.loc 1 84 0 discriminator 3
+ 201 0058 0133     		adds	r3, r3, #1
+ 202              	.LVL18:
+ 203 005a DBB2     		uxtb	r3, r3
+ 204              	.LVL19:
+ 205              	.L11:
+  84:main.c        ****     {
+ 206              		.loc 1 84 0 is_stmt 0 discriminator 1
+ 207 005c 032B     		cmp	r3, #3
+ 208 005e F5D9     		bls	.L12
+  88:main.c        **** 
+ 209              		.loc 1 88 0 is_stmt 1
+ 210              		@ sp needed
+ 211              	.LVL20:
+ 212 0060 04BC     		pop	{r2}
+ 213 0062 9046     		mov	r8, r2
+ 214 0064 F0BD     		pop	{r4, r5, r6, r7, pc}
+ 215              	.L14:
+ 216 0066 C046     		.align	2
+ 217              	.L13:
+ 218 0068 00000000 		.word	.LANCHOR0
+ 219 006c 00000000 		.word	.LANCHOR2
+ 220              		.cfi_endproc
+ 221              	.LFE38:
+ 222              		.size	out7seg, .-out7seg
+ 223              		.section	.text.main,"ax",%progbits
+ 224              		.align	2
+ 225              		.global	main
+ 226              		.code	16
+ 227              		.thumb_func
+ARM GAS  C:\Users\JANUSD~1\AppData\Local\Temp\ccEwIFdT.s 			page 7
+
+
+ 228              		.type	main, %function
+ 229              	main:
+ 230              	.LFB37:
+  27:main.c        ****     char str[STR_LEN];
+ 231              		.loc 1 27 0
+ 232              		.cfi_startproc
+ 233              		@ args = 0, pretend = 0, frame = 0
+ 234              		@ frame_needed = 0, uses_anonymous_args = 0
+ 235 0000 F8B5     		push	{r3, r4, r5, r6, r7, lr}
+ 236              		.cfi_def_cfa_offset 24
+ 237              		.cfi_offset 3, -24
+ 238              		.cfi_offset 4, -20
+ 239              		.cfi_offset 5, -16
+ 240              		.cfi_offset 6, -12
+ 241              		.cfi_offset 7, -8
+ 242              		.cfi_offset 14, -4
+  35:main.c        **** 
+ 243              		.loc 1 35 0
+ 244              		.syntax divided
+ 245              	@ 35 "main.c" 1
+ 246 0002 62B6     		CPSIE   i
+ 247              	@ 0 "" 2
+  37:main.c        ****     isr_100Hz_StartEx(isr_100Hz);
+ 248              		.loc 1 37 0
+ 249              		.thumb
+ 250              		.syntax unified
+ 251 0004 FFF7FEFF 		bl	SPIM_Start
+ 252              	.LVL21:
+  38:main.c        ****     
+ 253              		.loc 1 38 0
+ 254 0008 1F48     		ldr	r0, .L17
+ 255 000a FFF7FEFF 		bl	isr_100Hz_StartEx
+ 256              	.LVL22:
+  40:main.c        ****     UART_Start();
+ 257              		.loc 1 40 0
+ 258 000e FFF7FEFF 		bl	ADC_SAR_Seq_Start
+ 259              	.LVL23:
+  41:main.c        ****     UART_UartPutString("Init stage is done \r\n");
+ 260              		.loc 1 41 0
+ 261 0012 FFF7FEFF 		bl	UART_Start
+ 262              	.LVL24:
+  42:main.c        **** 
+ 263              		.loc 1 42 0
+ 264 0016 1D48     		ldr	r0, .L17+4
+ 265 0018 FFF7FEFF 		bl	UART_UartPutString
+ 266              	.LVL25:
+  44:main.c        ****     ADC_SAR_Seq_StartConvert();
+ 267              		.loc 1 44 0
+ 268 001c 1C48     		ldr	r0, .L17+8
+ 269 001e FFF7FEFF 		bl	UART_UartPutString
+ 270              	.LVL26:
+  45:main.c        ****     
+ 271              		.loc 1 45 0
+ 272 0022 FFF7FEFF 		bl	ADC_SAR_Seq_StartConvert
+ 273              	.LVL27:
+ 274              	.L16:
+  49:main.c        ****         ADC_SAR_Seq_IsEndConversion(ADC_SAR_Seq_WAIT_FOR_RESULT);
+ARM GAS  C:\Users\JANUSD~1\AppData\Local\Temp\ccEwIFdT.s 			page 8
+
+
+ 275              		.loc 1 49 0 discriminator 1
+ 276 0026 FA25     		movs	r5, #250
+ 277 0028 AD00     		lsls	r5, r5, #2
+ 278 002a 2800     		movs	r0, r5
+ 279 002c FFF7FEFF 		bl	CyDelay
+ 280              	.LVL28:
+  50:main.c        ****         
+ 281              		.loc 1 50 0 discriminator 1
+ 282 0030 0220     		movs	r0, #2
+ 283 0032 FFF7FEFF 		bl	ADC_SAR_Seq_IsEndConversion
+ 284              	.LVL29:
+  52:main.c        ****         adcResult_V = ADC_SAR_Seq_CountsTo_Volts(CHANNEL_0, adcResult);
+ 285              		.loc 1 52 0 discriminator 1
+ 286 0036 0020     		movs	r0, #0
+ 287 0038 FFF7FEFF 		bl	ADC_SAR_Seq_GetResult16
+ 288              	.LVL30:
+ 289 003c 0400     		movs	r4, r0
+ 290 003e 87B2     		uxth	r7, r0
+ 291              	.LVL31:
+  53:main.c        ****         adcResult_mV = ADC_SAR_Seq_CountsTo_mVolts(CHANNEL_0, adcResult);
+ 292              		.loc 1 53 0 discriminator 1
+ 293 0040 0100     		movs	r1, r0
+ 294 0042 0020     		movs	r0, #0
+ 295 0044 FFF7FEFF 		bl	ADC_SAR_Seq_CountsTo_Volts
+ 296              	.LVL32:
+  54:main.c        ****         adcResult_uV = ADC_SAR_Seq_CountsTo_uVolts(CHANNEL_0, adcResult);
+ 297              		.loc 1 54 0 discriminator 1
+ 298 0048 2100     		movs	r1, r4
+ 299 004a 0020     		movs	r0, #0
+ 300 004c FFF7FEFF 		bl	ADC_SAR_Seq_CountsTo_mVolts
+ 301              	.LVL33:
+ 302 0050 0600     		movs	r6, r0
+ 303              	.LVL34:
+  55:main.c        ****         
+ 304              		.loc 1 55 0 discriminator 1
+ 305 0052 2100     		movs	r1, r4
+ 306 0054 0020     		movs	r0, #0
+ 307 0056 FFF7FEFF 		bl	ADC_SAR_Seq_CountsTo_uVolts
+ 308              	.LVL35:
+  57:main.c        ****         out7seg(temperature);
+ 309              		.loc 1 57 0 discriminator 1
+ 310 005a 0A21     		movs	r1, #10
+ 311 005c 3000     		movs	r0, r6
+ 312 005e FFF7FEFF 		bl	__aeabi_idiv
+ 313              	.LVL36:
+ 314 0062 84B2     		uxth	r4, r0
+ 315 0064 0B4E     		ldr	r6, .L17+12
+ 316              	.LVL37:
+ 317 0066 3480     		strh	r4, [r6]
+  58:main.c        ****         
+ 318              		.loc 1 58 0 discriminator 1
+ 319 0068 2000     		movs	r0, r4
+ 320 006a FFF7FEFF 		bl	out7seg
+ 321              	.LVL38:
+  60:main.c        ****         my_adcResult_mV = My_CountsTo_mVolts(CHANNEL_0, adcResult);
+ 322              		.loc 1 60 0 discriminator 1
+ 323 006e 2800     		movs	r0, r5
+ARM GAS  C:\Users\JANUSD~1\AppData\Local\Temp\ccEwIFdT.s 			page 9
+
+
+ 324 0070 FFF7FEFF 		bl	CyDelay
+ 325              	.LVL39:
+  61:main.c        ****         temperature = adcResult_mV / 10; // 10 mV per C
+ 326              		.loc 1 61 0 discriminator 1
+ 327 0074 3900     		movs	r1, r7
+ 328 0076 0020     		movs	r0, #0
+ 329 0078 FFF7FEFF 		bl	My_CountsTo_mVolts
+ 330              	.LVL40:
+  62:main.c        ****         out7seg(temperature);
+ 331              		.loc 1 62 0 discriminator 1
+ 332 007c 3480     		strh	r4, [r6]
+  63:main.c        ****         
+ 333              		.loc 1 63 0 discriminator 1
+ 334 007e 2000     		movs	r0, r4
+ 335 0080 FFF7FEFF 		bl	out7seg
+ 336              	.LVL41:
+ 337 0084 CFE7     		b	.L16
+ 338              	.L18:
+ 339 0086 C046     		.align	2
+ 340              	.L17:
+ 341 0088 00000000 		.word	isr_100Hz
+ 342 008c 00000000 		.word	.LC7
+ 343 0090 18000000 		.word	.LC9
+ 344 0094 00000000 		.word	temperature
+ 345              		.cfi_endproc
+ 346              	.LFE37:
+ 347              		.size	main, .-main
+ 348              		.comm	temperature,2,2
+ 349              		.global	KOD7
+ 350              		.global	indyk
+ 351              		.section	.rodata
+ 352              		.align	2
+ 353              		.set	.LANCHOR2,. + 0
+ 354              		.type	KOD7, %object
+ 355              		.size	KOD7, 10
+ 356              	KOD7:
+ 357 0000 03       		.byte	3
+ 358 0001 9F       		.byte	-97
+ 359 0002 25       		.byte	37
+ 360 0003 0D       		.byte	13
+ 361 0004 99       		.byte	-103
+ 362 0005 49       		.byte	73
+ 363 0006 41       		.byte	65
+ 364 0007 1F       		.byte	31
+ 365 0008 01       		.byte	1
+ 366 0009 09       		.byte	9
+ 367              		.data
+ 368              		.align	2
+ 369              		.set	.LANCHOR0,. + 0
+ 370              		.type	indyk, %object
+ 371              		.size	indyk, 8
+ 372              	indyk:
+ 373 0000 FF10     		.short	4351
+ 374 0002 FF20     		.short	8447
+ 375 0004 FF40     		.short	16639
+ 376 0006 FF80     		.short	-32513
+ 377              		.section	.rodata.str1.4,"aMS",%progbits,1
+ARM GAS  C:\Users\JANUSD~1\AppData\Local\Temp\ccEwIFdT.s 			page 10
+
+
+ 378              		.align	2
+ 379              	.LC7:
+ 380 0000 496E6974 		.ascii	"Init stage is done \015\012\000"
+ 380      20737461 
+ 380      67652069 
+ 380      7320646F 
+ 380      6E65200D 
+ 381 0016 0000     		.space	2
+ 382              	.LC9:
+ 383 0018 53746172 		.ascii	"Starting ADC (FreeRunning mode only) \015\012\000"
+ 383      74696E67 
+ 383      20414443 
+ 383      20284672 
+ 383      65655275 
+ 384              		.bss
+ 385              		.set	.LANCHOR1,. + 0
+ 386              		.type	N_indyk.6665, %object
+ 387              		.size	N_indyk.6665, 1
+ 388              	N_indyk.6665:
+ 389 0000 00       		.space	1
+ 390              		.text
+ 391              	.Letext0:
+ 392              		.file 2 "c:\\program files (x86)\\cypress\\psoc creator\\4.2\\psoc creator\\import\\gnu\\arm\\5.4.
+ 393              		.file 3 "c:\\program files (x86)\\cypress\\psoc creator\\4.2\\psoc creator\\import\\gnu\\arm\\5.4.
+ 394              		.file 4 "Generated_Source\\PSoC4/cytypes.h"
+ 395              		.file 5 "Generated_Source\\PSoC4/ADC_SAR_Seq.h"
+ 396              		.file 6 "Generated_Source\\PSoC4/SPIM.h"
+ 397              		.file 7 "Generated_Source\\PSoC4/isr_100Hz.h"
+ 398              		.file 8 "Generated_Source\\PSoC4/UART.h"
+ 399              		.file 9 "Generated_Source\\PSoC4/UART_SPI_UART.h"
+ 400              		.file 10 "Generated_Source\\PSoC4/CyLib.h"
+ 401              		.section	.debug_info,"",%progbits
+ 402              	.Ldebug_info0:
+ 403 0000 62040000 		.4byte	0x462
+ 404 0004 0400     		.2byte	0x4
+ 405 0006 00000000 		.4byte	.Ldebug_abbrev0
+ 406 000a 04       		.byte	0x4
+ 407 000b 01       		.uleb128 0x1
+ 408 000c F4010000 		.4byte	.LASF48
+ 409 0010 0C       		.byte	0xc
+ 410 0011 E9020000 		.4byte	.LASF49
+ 411 0015 A2020000 		.4byte	.LASF50
+ 412 0019 00000000 		.4byte	.Ldebug_ranges0+0
+ 413 001d 00000000 		.4byte	0
+ 414 0021 00000000 		.4byte	.Ldebug_line0
+ 415 0025 02       		.uleb128 0x2
+ 416 0026 01       		.byte	0x1
+ 417 0027 06       		.byte	0x6
+ 418 0028 4A030000 		.4byte	.LASF0
+ 419 002c 02       		.uleb128 0x2
+ 420 002d 01       		.byte	0x1
+ 421 002e 08       		.byte	0x8
+ 422 002f FC000000 		.4byte	.LASF1
+ 423 0033 02       		.uleb128 0x2
+ 424 0034 02       		.byte	0x2
+ 425 0035 05       		.byte	0x5
+ 426 0036 18030000 		.4byte	.LASF2
+ARM GAS  C:\Users\JANUSD~1\AppData\Local\Temp\ccEwIFdT.s 			page 11
+
+
+ 427 003a 03       		.uleb128 0x3
+ 428 003b 0A010000 		.4byte	.LASF9
+ 429 003f 02       		.byte	0x2
+ 430 0040 2B       		.byte	0x2b
+ 431 0041 45000000 		.4byte	0x45
+ 432 0045 02       		.uleb128 0x2
+ 433 0046 02       		.byte	0x2
+ 434 0047 07       		.byte	0x7
+ 435 0048 47000000 		.4byte	.LASF3
+ 436 004c 02       		.uleb128 0x2
+ 437 004d 04       		.byte	0x4
+ 438 004e 05       		.byte	0x5
+ 439 004f 30030000 		.4byte	.LASF4
+ 440 0053 02       		.uleb128 0x2
+ 441 0054 04       		.byte	0x4
+ 442 0055 07       		.byte	0x7
+ 443 0056 BE000000 		.4byte	.LASF5
+ 444 005a 02       		.uleb128 0x2
+ 445 005b 08       		.byte	0x8
+ 446 005c 05       		.byte	0x5
+ 447 005d DB020000 		.4byte	.LASF6
+ 448 0061 02       		.uleb128 0x2
+ 449 0062 08       		.byte	0x8
+ 450 0063 07       		.byte	0x7
+ 451 0064 A4010000 		.4byte	.LASF7
+ 452 0068 04       		.uleb128 0x4
+ 453 0069 04       		.byte	0x4
+ 454 006a 05       		.byte	0x5
+ 455 006b 696E7400 		.ascii	"int\000"
+ 456 006f 02       		.uleb128 0x2
+ 457 0070 04       		.byte	0x4
+ 458 0071 07       		.byte	0x7
+ 459 0072 87010000 		.4byte	.LASF8
+ 460 0076 03       		.uleb128 0x3
+ 461 0077 27030000 		.4byte	.LASF10
+ 462 007b 03       		.byte	0x3
+ 463 007c 24       		.byte	0x24
+ 464 007d 3A000000 		.4byte	0x3a
+ 465 0081 05       		.uleb128 0x5
+ 466 0082 84000000 		.4byte	.LASF11
+ 467 0086 04       		.byte	0x4
+ 468 0087 E601     		.2byte	0x1e6
+ 469 0089 2C000000 		.4byte	0x2c
+ 470 008d 05       		.uleb128 0x5
+ 471 008e 41010000 		.4byte	.LASF12
+ 472 0092 04       		.byte	0x4
+ 473 0093 E701     		.2byte	0x1e7
+ 474 0095 45000000 		.4byte	0x45
+ 475 0099 05       		.uleb128 0x5
+ 476 009a B8000000 		.4byte	.LASF13
+ 477 009e 04       		.byte	0x4
+ 478 009f EA01     		.2byte	0x1ea
+ 479 00a1 33000000 		.4byte	0x33
+ 480 00a5 05       		.uleb128 0x5
+ 481 00a6 D0000000 		.4byte	.LASF14
+ 482 00aa 04       		.byte	0x4
+ 483 00ab EB01     		.2byte	0x1eb
+ARM GAS  C:\Users\JANUSD~1\AppData\Local\Temp\ccEwIFdT.s 			page 12
+
+
+ 484 00ad 4C000000 		.4byte	0x4c
+ 485 00b1 02       		.uleb128 0x2
+ 486 00b2 04       		.byte	0x4
+ 487 00b3 04       		.byte	0x4
+ 488 00b4 30000000 		.4byte	.LASF15
+ 489 00b8 02       		.uleb128 0x2
+ 490 00b9 08       		.byte	0x8
+ 491 00ba 04       		.byte	0x4
+ 492 00bb 15010000 		.4byte	.LASF16
+ 493 00bf 02       		.uleb128 0x2
+ 494 00c0 01       		.byte	0x1
+ 495 00c1 08       		.byte	0x8
+ 496 00c2 F0020000 		.4byte	.LASF17
+ 497 00c6 02       		.uleb128 0x2
+ 498 00c7 08       		.byte	0x8
+ 499 00c8 04       		.byte	0x4
+ 500 00c9 3E030000 		.4byte	.LASF18
+ 501 00cd 02       		.uleb128 0x2
+ 502 00ce 04       		.byte	0x4
+ 503 00cf 07       		.byte	0x7
+ 504 00d0 8C020000 		.4byte	.LASF19
+ 505 00d4 06       		.uleb128 0x6
+ 506 00d5 48010000 		.4byte	.LASF24
+ 507 00d9 01       		.byte	0x1
+ 508 00da 5A       		.byte	0x5a
+ 509 00db 00000000 		.4byte	.LFB39
+ 510 00df 24000000 		.4byte	.LFE39-.LFB39
+ 511 00e3 01       		.uleb128 0x1
+ 512 00e4 9C       		.byte	0x9c
+ 513 00e5 04010000 		.4byte	0x104
+ 514 00e9 07       		.uleb128 0x7
+ 515 00ea E1000000 		.4byte	.LASF22
+ 516 00ee 01       		.byte	0x1
+ 517 00ef 5C       		.byte	0x5c
+ 518 00f0 81000000 		.4byte	0x81
+ 519 00f4 05       		.uleb128 0x5
+ 520 00f5 03       		.byte	0x3
+ 521 00f6 00000000 		.4byte	N_indyk.6665
+ 522 00fa 08       		.uleb128 0x8
+ 523 00fb 10000000 		.4byte	.LVL0
+ 524 00ff D5030000 		.4byte	0x3d5
+ 525 0103 00       		.byte	0
+ 526 0104 09       		.uleb128 0x9
+ 527 0105 E9000000 		.4byte	.LASF51
+ 528 0109 01       		.byte	0x1
+ 529 010a 12       		.byte	0x12
+ 530 010b 76000000 		.4byte	0x76
+ 531 010f 00000000 		.4byte	.LFB36
+ 532 0113 2C000000 		.4byte	.LFE36-.LFB36
+ 533 0117 01       		.uleb128 0x1
+ 534 0118 9C       		.byte	0x9c
+ 535 0119 4B010000 		.4byte	0x14b
+ 536 011d 0A       		.uleb128 0xa
+ 537 011e 0C000000 		.4byte	.LASF20
+ 538 0122 01       		.byte	0x1
+ 539 0123 12       		.byte	0x12
+ 540 0124 68000000 		.4byte	0x68
+ARM GAS  C:\Users\JANUSD~1\AppData\Local\Temp\ccEwIFdT.s 			page 13
+
+
+ 541 0128 00000000 		.4byte	.LLST0
+ 542 012c 0A       		.uleb128 0xa
+ 543 012d 82020000 		.4byte	.LASF21
+ 544 0131 01       		.byte	0x1
+ 545 0132 12       		.byte	0x12
+ 546 0133 8D000000 		.4byte	0x8d
+ 547 0137 21000000 		.4byte	.LLST1
+ 548 013b 0B       		.uleb128 0xb
+ 549 013c 1C010000 		.4byte	.LASF23
+ 550 0140 01       		.byte	0x1
+ 551 0141 13       		.byte	0x13
+ 552 0142 8D000000 		.4byte	0x8d
+ 553 0146 42000000 		.4byte	.LLST2
+ 554 014a 00       		.byte	0
+ 555 014b 0C       		.uleb128 0xc
+ 556 014c 10030000 		.4byte	.LASF25
+ 557 0150 01       		.byte	0x1
+ 558 0151 48       		.byte	0x48
+ 559 0152 00000000 		.4byte	.LFB38
+ 560 0156 70000000 		.4byte	.LFE38-.LFB38
+ 561 015a 01       		.uleb128 0x1
+ 562 015b 9C       		.byte	0x9c
+ 563 015c 7D010000 		.4byte	0x17d
+ 564 0160 0A       		.uleb128 0xa
+ 565 0161 7F000000 		.4byte	.LASF26
+ 566 0165 01       		.byte	0x1
+ 567 0166 48       		.byte	0x48
+ 568 0167 8D000000 		.4byte	0x8d
+ 569 016b 6B000000 		.4byte	.LLST3
+ 570 016f 0D       		.uleb128 0xd
+ 571 0170 6900     		.ascii	"i\000"
+ 572 0172 01       		.byte	0x1
+ 573 0173 4A       		.byte	0x4a
+ 574 0174 81000000 		.4byte	0x81
+ 575 0178 89000000 		.4byte	.LLST4
+ 576 017c 00       		.byte	0
+ 577 017d 0E       		.uleb128 0xe
+ 578 017e 22030000 		.4byte	.LASF52
+ 579 0182 01       		.byte	0x1
+ 580 0183 1A       		.byte	0x1a
+ 581 0184 68000000 		.4byte	0x68
+ 582 0188 00000000 		.4byte	.LFB37
+ 583 018c 98000000 		.4byte	.LFE37-.LFB37
+ 584 0190 01       		.uleb128 0x1
+ 585 0191 9C       		.byte	0x9c
+ 586 0192 1E030000 		.4byte	0x31e
+ 587 0196 0F       		.uleb128 0xf
+ 588 0197 73747200 		.ascii	"str\000"
+ 589 019b 01       		.byte	0x1
+ 590 019c 1C       		.byte	0x1c
+ 591 019d 1E030000 		.4byte	0x31e
+ 592 01a1 07       		.uleb128 0x7
+ 593 01a2 82020000 		.4byte	.LASF21
+ 594 01a6 01       		.byte	0x1
+ 595 01a7 1D       		.byte	0x1d
+ 596 01a8 8D000000 		.4byte	0x8d
+ 597 01ac 01       		.uleb128 0x1
+ARM GAS  C:\Users\JANUSD~1\AppData\Local\Temp\ccEwIFdT.s 			page 14
+
+
+ 598 01ad 57       		.byte	0x57
+ 599 01ae 10       		.uleb128 0x10
+ 600 01af 00000000 		.4byte	.LASF27
+ 601 01b3 01       		.byte	0x1
+ 602 01b4 1E       		.byte	0x1e
+ 603 01b5 B1000000 		.4byte	0xb1
+ 604 01b9 0B       		.uleb128 0xb
+ 605 01ba 1C010000 		.4byte	.LASF23
+ 606 01be 01       		.byte	0x1
+ 607 01bf 1F       		.byte	0x1f
+ 608 01c0 99000000 		.4byte	0x99
+ 609 01c4 C9000000 		.4byte	.LLST5
+ 610 01c8 10       		.uleb128 0x10
+ 611 01c9 95020000 		.4byte	.LASF28
+ 612 01cd 01       		.byte	0x1
+ 613 01ce 20       		.byte	0x20
+ 614 01cf A5000000 		.4byte	0xa5
+ 615 01d3 10       		.uleb128 0x10
+ 616 01d4 94010000 		.4byte	.LASF29
+ 617 01d8 01       		.byte	0x1
+ 618 01d9 21       		.byte	0x21
+ 619 01da 8D000000 		.4byte	0x8d
+ 620 01de 08       		.uleb128 0x8
+ 621 01df 08000000 		.4byte	.LVL21
+ 622 01e3 E0030000 		.4byte	0x3e0
+ 623 01e7 11       		.uleb128 0x11
+ 624 01e8 0E000000 		.4byte	.LVL22
+ 625 01ec EB030000 		.4byte	0x3eb
+ 626 01f0 FE010000 		.4byte	0x1fe
+ 627 01f4 12       		.uleb128 0x12
+ 628 01f5 01       		.uleb128 0x1
+ 629 01f6 50       		.byte	0x50
+ 630 01f7 05       		.uleb128 0x5
+ 631 01f8 03       		.byte	0x3
+ 632 01f9 00000000 		.4byte	isr_100Hz
+ 633 01fd 00       		.byte	0
+ 634 01fe 08       		.uleb128 0x8
+ 635 01ff 12000000 		.4byte	.LVL23
+ 636 0203 F6030000 		.4byte	0x3f6
+ 637 0207 08       		.uleb128 0x8
+ 638 0208 16000000 		.4byte	.LVL24
+ 639 020c 01040000 		.4byte	0x401
+ 640 0210 11       		.uleb128 0x11
+ 641 0211 1C000000 		.4byte	.LVL25
+ 642 0215 0C040000 		.4byte	0x40c
+ 643 0219 27020000 		.4byte	0x227
+ 644 021d 12       		.uleb128 0x12
+ 645 021e 01       		.uleb128 0x1
+ 646 021f 50       		.byte	0x50
+ 647 0220 05       		.uleb128 0x5
+ 648 0221 03       		.byte	0x3
+ 649 0222 00000000 		.4byte	.LC7
+ 650 0226 00       		.byte	0
+ 651 0227 11       		.uleb128 0x11
+ 652 0228 22000000 		.4byte	.LVL26
+ 653 022c 0C040000 		.4byte	0x40c
+ 654 0230 3E020000 		.4byte	0x23e
+ARM GAS  C:\Users\JANUSD~1\AppData\Local\Temp\ccEwIFdT.s 			page 15
+
+
+ 655 0234 12       		.uleb128 0x12
+ 656 0235 01       		.uleb128 0x1
+ 657 0236 50       		.byte	0x50
+ 658 0237 05       		.uleb128 0x5
+ 659 0238 03       		.byte	0x3
+ 660 0239 18000000 		.4byte	.LC9
+ 661 023d 00       		.byte	0
+ 662 023e 08       		.uleb128 0x8
+ 663 023f 26000000 		.4byte	.LVL27
+ 664 0243 18040000 		.4byte	0x418
+ 665 0247 11       		.uleb128 0x11
+ 666 0248 30000000 		.4byte	.LVL28
+ 667 024c 23040000 		.4byte	0x423
+ 668 0250 5B020000 		.4byte	0x25b
+ 669 0254 12       		.uleb128 0x12
+ 670 0255 01       		.uleb128 0x1
+ 671 0256 50       		.byte	0x50
+ 672 0257 02       		.uleb128 0x2
+ 673 0258 75       		.byte	0x75
+ 674 0259 00       		.sleb128 0
+ 675 025a 00       		.byte	0
+ 676 025b 11       		.uleb128 0x11
+ 677 025c 36000000 		.4byte	.LVL29
+ 678 0260 2E040000 		.4byte	0x42e
+ 679 0264 6E020000 		.4byte	0x26e
+ 680 0268 12       		.uleb128 0x12
+ 681 0269 01       		.uleb128 0x1
+ 682 026a 50       		.byte	0x50
+ 683 026b 01       		.uleb128 0x1
+ 684 026c 32       		.byte	0x32
+ 685 026d 00       		.byte	0
+ 686 026e 11       		.uleb128 0x11
+ 687 026f 3C000000 		.4byte	.LVL30
+ 688 0273 39040000 		.4byte	0x439
+ 689 0277 81020000 		.4byte	0x281
+ 690 027b 12       		.uleb128 0x12
+ 691 027c 01       		.uleb128 0x1
+ 692 027d 50       		.byte	0x50
+ 693 027e 01       		.uleb128 0x1
+ 694 027f 30       		.byte	0x30
+ 695 0280 00       		.byte	0
+ 696 0281 11       		.uleb128 0x11
+ 697 0282 48000000 		.4byte	.LVL32
+ 698 0286 44040000 		.4byte	0x444
+ 699 028a 9A020000 		.4byte	0x29a
+ 700 028e 12       		.uleb128 0x12
+ 701 028f 01       		.uleb128 0x1
+ 702 0290 50       		.byte	0x50
+ 703 0291 01       		.uleb128 0x1
+ 704 0292 30       		.byte	0x30
+ 705 0293 12       		.uleb128 0x12
+ 706 0294 01       		.uleb128 0x1
+ 707 0295 51       		.byte	0x51
+ 708 0296 02       		.uleb128 0x2
+ 709 0297 74       		.byte	0x74
+ 710 0298 00       		.sleb128 0
+ 711 0299 00       		.byte	0
+ARM GAS  C:\Users\JANUSD~1\AppData\Local\Temp\ccEwIFdT.s 			page 16
+
+
+ 712 029a 11       		.uleb128 0x11
+ 713 029b 50000000 		.4byte	.LVL33
+ 714 029f 4F040000 		.4byte	0x44f
+ 715 02a3 B3020000 		.4byte	0x2b3
+ 716 02a7 12       		.uleb128 0x12
+ 717 02a8 01       		.uleb128 0x1
+ 718 02a9 50       		.byte	0x50
+ 719 02aa 01       		.uleb128 0x1
+ 720 02ab 30       		.byte	0x30
+ 721 02ac 12       		.uleb128 0x12
+ 722 02ad 01       		.uleb128 0x1
+ 723 02ae 51       		.byte	0x51
+ 724 02af 02       		.uleb128 0x2
+ 725 02b0 74       		.byte	0x74
+ 726 02b1 00       		.sleb128 0
+ 727 02b2 00       		.byte	0
+ 728 02b3 11       		.uleb128 0x11
+ 729 02b4 5A000000 		.4byte	.LVL35
+ 730 02b8 5A040000 		.4byte	0x45a
+ 731 02bc CC020000 		.4byte	0x2cc
+ 732 02c0 12       		.uleb128 0x12
+ 733 02c1 01       		.uleb128 0x1
+ 734 02c2 50       		.byte	0x50
+ 735 02c3 01       		.uleb128 0x1
+ 736 02c4 30       		.byte	0x30
+ 737 02c5 12       		.uleb128 0x12
+ 738 02c6 01       		.uleb128 0x1
+ 739 02c7 51       		.byte	0x51
+ 740 02c8 02       		.uleb128 0x2
+ 741 02c9 74       		.byte	0x74
+ 742 02ca 00       		.sleb128 0
+ 743 02cb 00       		.byte	0
+ 744 02cc 11       		.uleb128 0x11
+ 745 02cd 6E000000 		.4byte	.LVL38
+ 746 02d1 4B010000 		.4byte	0x14b
+ 747 02d5 E0020000 		.4byte	0x2e0
+ 748 02d9 12       		.uleb128 0x12
+ 749 02da 01       		.uleb128 0x1
+ 750 02db 50       		.byte	0x50
+ 751 02dc 02       		.uleb128 0x2
+ 752 02dd 74       		.byte	0x74
+ 753 02de 00       		.sleb128 0
+ 754 02df 00       		.byte	0
+ 755 02e0 11       		.uleb128 0x11
+ 756 02e1 74000000 		.4byte	.LVL39
+ 757 02e5 23040000 		.4byte	0x423
+ 758 02e9 F4020000 		.4byte	0x2f4
+ 759 02ed 12       		.uleb128 0x12
+ 760 02ee 01       		.uleb128 0x1
+ 761 02ef 50       		.byte	0x50
+ 762 02f0 02       		.uleb128 0x2
+ 763 02f1 75       		.byte	0x75
+ 764 02f2 00       		.sleb128 0
+ 765 02f3 00       		.byte	0
+ 766 02f4 11       		.uleb128 0x11
+ 767 02f5 7C000000 		.4byte	.LVL40
+ 768 02f9 04010000 		.4byte	0x104
+ARM GAS  C:\Users\JANUSD~1\AppData\Local\Temp\ccEwIFdT.s 			page 17
+
+
+ 769 02fd 0D030000 		.4byte	0x30d
+ 770 0301 12       		.uleb128 0x12
+ 771 0302 01       		.uleb128 0x1
+ 772 0303 50       		.byte	0x50
+ 773 0304 01       		.uleb128 0x1
+ 774 0305 30       		.byte	0x30
+ 775 0306 12       		.uleb128 0x12
+ 776 0307 01       		.uleb128 0x1
+ 777 0308 51       		.byte	0x51
+ 778 0309 02       		.uleb128 0x2
+ 779 030a 77       		.byte	0x77
+ 780 030b 00       		.sleb128 0
+ 781 030c 00       		.byte	0
+ 782 030d 13       		.uleb128 0x13
+ 783 030e 84000000 		.4byte	.LVL41
+ 784 0312 4B010000 		.4byte	0x14b
+ 785 0316 12       		.uleb128 0x12
+ 786 0317 01       		.uleb128 0x1
+ 787 0318 50       		.byte	0x50
+ 788 0319 02       		.uleb128 0x2
+ 789 031a 74       		.byte	0x74
+ 790 031b 00       		.sleb128 0
+ 791 031c 00       		.byte	0
+ 792 031d 00       		.byte	0
+ 793 031e 14       		.uleb128 0x14
+ 794 031f BF000000 		.4byte	0xbf
+ 795 0323 2E030000 		.4byte	0x32e
+ 796 0327 15       		.uleb128 0x15
+ 797 0328 CD000000 		.4byte	0xcd
+ 798 032c 4F       		.byte	0x4f
+ 799 032d 00       		.byte	0
+ 800 032e 14       		.uleb128 0x14
+ 801 032f 3E030000 		.4byte	0x33e
+ 802 0333 3E030000 		.4byte	0x33e
+ 803 0337 15       		.uleb128 0x15
+ 804 0338 CD000000 		.4byte	0xcd
+ 805 033c 00       		.byte	0
+ 806 033d 00       		.byte	0
+ 807 033e 16       		.uleb128 0x16
+ 808 033f 99000000 		.4byte	0x99
+ 809 0343 17       		.uleb128 0x17
+ 810 0344 56030000 		.4byte	.LASF30
+ 811 0348 05       		.byte	0x5
+ 812 0349 D9       		.byte	0xd9
+ 813 034a 4E030000 		.4byte	0x34e
+ 814 034e 16       		.uleb128 0x16
+ 815 034f 2E030000 		.4byte	0x32e
+ 816 0353 14       		.uleb128 0x14
+ 817 0354 63030000 		.4byte	0x363
+ 818 0358 63030000 		.4byte	0x363
+ 819 035c 15       		.uleb128 0x15
+ 820 035d CD000000 		.4byte	0xcd
+ 821 0361 00       		.byte	0
+ 822 0362 00       		.byte	0
+ 823 0363 16       		.uleb128 0x16
+ 824 0364 A5000000 		.4byte	0xa5
+ 825 0368 17       		.uleb128 0x17
+ARM GAS  C:\Users\JANUSD~1\AppData\Local\Temp\ccEwIFdT.s 			page 18
+
+
+ 826 0369 6B010000 		.4byte	.LASF31
+ 827 036d 05       		.byte	0x5
+ 828 036e DA       		.byte	0xda
+ 829 036f 73030000 		.4byte	0x373
+ 830 0373 16       		.uleb128 0x16
+ 831 0374 53030000 		.4byte	0x353
+ 832 0378 14       		.uleb128 0x14
+ 833 0379 8D000000 		.4byte	0x8d
+ 834 037d 88030000 		.4byte	0x388
+ 835 0381 15       		.uleb128 0x15
+ 836 0382 CD000000 		.4byte	0xcd
+ 837 0386 03       		.byte	0x3
+ 838 0387 00       		.byte	0
+ 839 0388 18       		.uleb128 0x18
+ 840 0389 5A000000 		.4byte	.LASF32
+ 841 038d 01       		.byte	0x1
+ 842 038e 09       		.byte	0x9
+ 843 038f 78030000 		.4byte	0x378
+ 844 0393 05       		.uleb128 0x5
+ 845 0394 03       		.byte	0x3
+ 846 0395 00000000 		.4byte	indyk
+ 847 0399 14       		.uleb128 0x14
+ 848 039a A9030000 		.4byte	0x3a9
+ 849 039e A9030000 		.4byte	0x3a9
+ 850 03a2 15       		.uleb128 0x15
+ 851 03a3 CD000000 		.4byte	0xcd
+ 852 03a7 09       		.byte	0x9
+ 853 03a8 00       		.byte	0
+ 854 03a9 19       		.uleb128 0x19
+ 855 03aa 81000000 		.4byte	0x81
+ 856 03ae 18       		.uleb128 0x18
+ 857 03af 39030000 		.4byte	.LASF33
+ 858 03b3 01       		.byte	0x1
+ 859 03b4 0A       		.byte	0xa
+ 860 03b5 BF030000 		.4byte	0x3bf
+ 861 03b9 05       		.uleb128 0x5
+ 862 03ba 03       		.byte	0x3
+ 863 03bb 00000000 		.4byte	KOD7
+ 864 03bf 19       		.uleb128 0x19
+ 865 03c0 99030000 		.4byte	0x399
+ 866 03c4 18       		.uleb128 0x18
+ 867 03c5 73000000 		.4byte	.LASF34
+ 868 03c9 01       		.byte	0x1
+ 869 03ca 0F       		.byte	0xf
+ 870 03cb 8D000000 		.4byte	0x8d
+ 871 03cf 05       		.uleb128 0x5
+ 872 03d0 03       		.byte	0x3
+ 873 03d1 00000000 		.4byte	temperature
+ 874 03d5 1A       		.uleb128 0x1a
+ 875 03d6 36000000 		.4byte	.LASF35
+ 876 03da 36000000 		.4byte	.LASF35
+ 877 03de 06       		.byte	0x6
+ 878 03df 5E       		.byte	0x5e
+ 879 03e0 1A       		.uleb128 0x1a
+ 880 03e1 BB010000 		.4byte	.LASF36
+ 881 03e5 BB010000 		.4byte	.LASF36
+ 882 03e9 06       		.byte	0x6
+ARM GAS  C:\Users\JANUSD~1\AppData\Local\Temp\ccEwIFdT.s 			page 19
+
+
+ 883 03ea 4D       		.byte	0x4d
+ 884 03eb 1A       		.uleb128 0x1a
+ 885 03ec A6000000 		.4byte	.LASF37
+ 886 03f0 A6000000 		.4byte	.LASF37
+ 887 03f4 07       		.byte	0x7
+ 888 03f5 18       		.byte	0x18
+ 889 03f6 1A       		.uleb128 0x1a
+ 890 03f7 C6010000 		.4byte	.LASF38
+ 891 03fb C6010000 		.4byte	.LASF38
+ 892 03ff 05       		.byte	0x5
+ 893 0400 99       		.byte	0x99
+ 894 0401 1A       		.uleb128 0x1a
+ 895 0402 D6000000 		.4byte	.LASF39
+ 896 0406 D6000000 		.4byte	.LASF39
+ 897 040a 08       		.byte	0x8
+ 898 040b 72       		.byte	0x72
+ 899 040c 1B       		.uleb128 0x1b
+ 900 040d 60000000 		.4byte	.LASF40
+ 901 0411 60000000 		.4byte	.LASF40
+ 902 0415 09       		.byte	0x9
+ 903 0416 2A03     		.2byte	0x32a
+ 904 0418 1A       		.uleb128 0x1a
+ 905 0419 52010000 		.4byte	.LASF41
+ 906 041d 52010000 		.4byte	.LASF41
+ 907 0421 05       		.byte	0x5
+ 908 0422 9D       		.byte	0x9d
+ 909 0423 1A       		.uleb128 0x1a
+ 910 0424 69030000 		.4byte	.LASF42
+ 911 0428 69030000 		.4byte	.LASF42
+ 912 042c 0A       		.byte	0xa
+ 913 042d D9       		.byte	0xd9
+ 914 042e 1A       		.uleb128 0x1a
+ 915 042f 8A000000 		.4byte	.LASF43
+ 916 0433 8A000000 		.4byte	.LASF43
+ 917 0437 05       		.byte	0x5
+ 918 0438 9F       		.byte	0x9f
+ 919 0439 1A       		.uleb128 0x1a
+ 920 043a 29010000 		.4byte	.LASF44
+ 921 043e 29010000 		.4byte	.LASF44
+ 922 0442 05       		.byte	0x5
+ 923 0443 A0       		.byte	0xa0
+ 924 0444 1A       		.uleb128 0x1a
+ 925 0445 F5020000 		.4byte	.LASF45
+ 926 0449 F5020000 		.4byte	.LASF45
+ 927 044d 05       		.byte	0x5
+ 928 044e AE       		.byte	0xae
+ 929 044f 1A       		.uleb128 0x1a
+ 930 0450 14000000 		.4byte	.LASF46
+ 931 0454 14000000 		.4byte	.LASF46
+ 932 0458 05       		.byte	0x5
+ 933 0459 AC       		.byte	0xac
+ 934 045a 1A       		.uleb128 0x1a
+ 935 045b D8010000 		.4byte	.LASF47
+ 936 045f D8010000 		.4byte	.LASF47
+ 937 0463 05       		.byte	0x5
+ 938 0464 AD       		.byte	0xad
+ 939 0465 00       		.byte	0
+ARM GAS  C:\Users\JANUSD~1\AppData\Local\Temp\ccEwIFdT.s 			page 20
+
+
+ 940              		.section	.debug_abbrev,"",%progbits
+ 941              	.Ldebug_abbrev0:
+ 942 0000 01       		.uleb128 0x1
+ 943 0001 11       		.uleb128 0x11
+ 944 0002 01       		.byte	0x1
+ 945 0003 25       		.uleb128 0x25
+ 946 0004 0E       		.uleb128 0xe
+ 947 0005 13       		.uleb128 0x13
+ 948 0006 0B       		.uleb128 0xb
+ 949 0007 03       		.uleb128 0x3
+ 950 0008 0E       		.uleb128 0xe
+ 951 0009 1B       		.uleb128 0x1b
+ 952 000a 0E       		.uleb128 0xe
+ 953 000b 55       		.uleb128 0x55
+ 954 000c 17       		.uleb128 0x17
+ 955 000d 11       		.uleb128 0x11
+ 956 000e 01       		.uleb128 0x1
+ 957 000f 10       		.uleb128 0x10
+ 958 0010 17       		.uleb128 0x17
+ 959 0011 00       		.byte	0
+ 960 0012 00       		.byte	0
+ 961 0013 02       		.uleb128 0x2
+ 962 0014 24       		.uleb128 0x24
+ 963 0015 00       		.byte	0
+ 964 0016 0B       		.uleb128 0xb
+ 965 0017 0B       		.uleb128 0xb
+ 966 0018 3E       		.uleb128 0x3e
+ 967 0019 0B       		.uleb128 0xb
+ 968 001a 03       		.uleb128 0x3
+ 969 001b 0E       		.uleb128 0xe
+ 970 001c 00       		.byte	0
+ 971 001d 00       		.byte	0
+ 972 001e 03       		.uleb128 0x3
+ 973 001f 16       		.uleb128 0x16
+ 974 0020 00       		.byte	0
+ 975 0021 03       		.uleb128 0x3
+ 976 0022 0E       		.uleb128 0xe
+ 977 0023 3A       		.uleb128 0x3a
+ 978 0024 0B       		.uleb128 0xb
+ 979 0025 3B       		.uleb128 0x3b
+ 980 0026 0B       		.uleb128 0xb
+ 981 0027 49       		.uleb128 0x49
+ 982 0028 13       		.uleb128 0x13
+ 983 0029 00       		.byte	0
+ 984 002a 00       		.byte	0
+ 985 002b 04       		.uleb128 0x4
+ 986 002c 24       		.uleb128 0x24
+ 987 002d 00       		.byte	0
+ 988 002e 0B       		.uleb128 0xb
+ 989 002f 0B       		.uleb128 0xb
+ 990 0030 3E       		.uleb128 0x3e
+ 991 0031 0B       		.uleb128 0xb
+ 992 0032 03       		.uleb128 0x3
+ 993 0033 08       		.uleb128 0x8
+ 994 0034 00       		.byte	0
+ 995 0035 00       		.byte	0
+ 996 0036 05       		.uleb128 0x5
+ARM GAS  C:\Users\JANUSD~1\AppData\Local\Temp\ccEwIFdT.s 			page 21
+
+
+ 997 0037 16       		.uleb128 0x16
+ 998 0038 00       		.byte	0
+ 999 0039 03       		.uleb128 0x3
+ 1000 003a 0E       		.uleb128 0xe
+ 1001 003b 3A       		.uleb128 0x3a
+ 1002 003c 0B       		.uleb128 0xb
+ 1003 003d 3B       		.uleb128 0x3b
+ 1004 003e 05       		.uleb128 0x5
+ 1005 003f 49       		.uleb128 0x49
+ 1006 0040 13       		.uleb128 0x13
+ 1007 0041 00       		.byte	0
+ 1008 0042 00       		.byte	0
+ 1009 0043 06       		.uleb128 0x6
+ 1010 0044 2E       		.uleb128 0x2e
+ 1011 0045 01       		.byte	0x1
+ 1012 0046 3F       		.uleb128 0x3f
+ 1013 0047 19       		.uleb128 0x19
+ 1014 0048 03       		.uleb128 0x3
+ 1015 0049 0E       		.uleb128 0xe
+ 1016 004a 3A       		.uleb128 0x3a
+ 1017 004b 0B       		.uleb128 0xb
+ 1018 004c 3B       		.uleb128 0x3b
+ 1019 004d 0B       		.uleb128 0xb
+ 1020 004e 27       		.uleb128 0x27
+ 1021 004f 19       		.uleb128 0x19
+ 1022 0050 11       		.uleb128 0x11
+ 1023 0051 01       		.uleb128 0x1
+ 1024 0052 12       		.uleb128 0x12
+ 1025 0053 06       		.uleb128 0x6
+ 1026 0054 40       		.uleb128 0x40
+ 1027 0055 18       		.uleb128 0x18
+ 1028 0056 9742     		.uleb128 0x2117
+ 1029 0058 19       		.uleb128 0x19
+ 1030 0059 01       		.uleb128 0x1
+ 1031 005a 13       		.uleb128 0x13
+ 1032 005b 00       		.byte	0
+ 1033 005c 00       		.byte	0
+ 1034 005d 07       		.uleb128 0x7
+ 1035 005e 34       		.uleb128 0x34
+ 1036 005f 00       		.byte	0
+ 1037 0060 03       		.uleb128 0x3
+ 1038 0061 0E       		.uleb128 0xe
+ 1039 0062 3A       		.uleb128 0x3a
+ 1040 0063 0B       		.uleb128 0xb
+ 1041 0064 3B       		.uleb128 0x3b
+ 1042 0065 0B       		.uleb128 0xb
+ 1043 0066 49       		.uleb128 0x49
+ 1044 0067 13       		.uleb128 0x13
+ 1045 0068 02       		.uleb128 0x2
+ 1046 0069 18       		.uleb128 0x18
+ 1047 006a 00       		.byte	0
+ 1048 006b 00       		.byte	0
+ 1049 006c 08       		.uleb128 0x8
+ 1050 006d 898201   		.uleb128 0x4109
+ 1051 0070 00       		.byte	0
+ 1052 0071 11       		.uleb128 0x11
+ 1053 0072 01       		.uleb128 0x1
+ARM GAS  C:\Users\JANUSD~1\AppData\Local\Temp\ccEwIFdT.s 			page 22
+
+
+ 1054 0073 31       		.uleb128 0x31
+ 1055 0074 13       		.uleb128 0x13
+ 1056 0075 00       		.byte	0
+ 1057 0076 00       		.byte	0
+ 1058 0077 09       		.uleb128 0x9
+ 1059 0078 2E       		.uleb128 0x2e
+ 1060 0079 01       		.byte	0x1
+ 1061 007a 3F       		.uleb128 0x3f
+ 1062 007b 19       		.uleb128 0x19
+ 1063 007c 03       		.uleb128 0x3
+ 1064 007d 0E       		.uleb128 0xe
+ 1065 007e 3A       		.uleb128 0x3a
+ 1066 007f 0B       		.uleb128 0xb
+ 1067 0080 3B       		.uleb128 0x3b
+ 1068 0081 0B       		.uleb128 0xb
+ 1069 0082 27       		.uleb128 0x27
+ 1070 0083 19       		.uleb128 0x19
+ 1071 0084 49       		.uleb128 0x49
+ 1072 0085 13       		.uleb128 0x13
+ 1073 0086 11       		.uleb128 0x11
+ 1074 0087 01       		.uleb128 0x1
+ 1075 0088 12       		.uleb128 0x12
+ 1076 0089 06       		.uleb128 0x6
+ 1077 008a 40       		.uleb128 0x40
+ 1078 008b 18       		.uleb128 0x18
+ 1079 008c 9642     		.uleb128 0x2116
+ 1080 008e 19       		.uleb128 0x19
+ 1081 008f 01       		.uleb128 0x1
+ 1082 0090 13       		.uleb128 0x13
+ 1083 0091 00       		.byte	0
+ 1084 0092 00       		.byte	0
+ 1085 0093 0A       		.uleb128 0xa
+ 1086 0094 05       		.uleb128 0x5
+ 1087 0095 00       		.byte	0
+ 1088 0096 03       		.uleb128 0x3
+ 1089 0097 0E       		.uleb128 0xe
+ 1090 0098 3A       		.uleb128 0x3a
+ 1091 0099 0B       		.uleb128 0xb
+ 1092 009a 3B       		.uleb128 0x3b
+ 1093 009b 0B       		.uleb128 0xb
+ 1094 009c 49       		.uleb128 0x49
+ 1095 009d 13       		.uleb128 0x13
+ 1096 009e 02       		.uleb128 0x2
+ 1097 009f 17       		.uleb128 0x17
+ 1098 00a0 00       		.byte	0
+ 1099 00a1 00       		.byte	0
+ 1100 00a2 0B       		.uleb128 0xb
+ 1101 00a3 34       		.uleb128 0x34
+ 1102 00a4 00       		.byte	0
+ 1103 00a5 03       		.uleb128 0x3
+ 1104 00a6 0E       		.uleb128 0xe
+ 1105 00a7 3A       		.uleb128 0x3a
+ 1106 00a8 0B       		.uleb128 0xb
+ 1107 00a9 3B       		.uleb128 0x3b
+ 1108 00aa 0B       		.uleb128 0xb
+ 1109 00ab 49       		.uleb128 0x49
+ 1110 00ac 13       		.uleb128 0x13
+ARM GAS  C:\Users\JANUSD~1\AppData\Local\Temp\ccEwIFdT.s 			page 23
+
+
+ 1111 00ad 02       		.uleb128 0x2
+ 1112 00ae 17       		.uleb128 0x17
+ 1113 00af 00       		.byte	0
+ 1114 00b0 00       		.byte	0
+ 1115 00b1 0C       		.uleb128 0xc
+ 1116 00b2 2E       		.uleb128 0x2e
+ 1117 00b3 01       		.byte	0x1
+ 1118 00b4 3F       		.uleb128 0x3f
+ 1119 00b5 19       		.uleb128 0x19
+ 1120 00b6 03       		.uleb128 0x3
+ 1121 00b7 0E       		.uleb128 0xe
+ 1122 00b8 3A       		.uleb128 0x3a
+ 1123 00b9 0B       		.uleb128 0xb
+ 1124 00ba 3B       		.uleb128 0x3b
+ 1125 00bb 0B       		.uleb128 0xb
+ 1126 00bc 27       		.uleb128 0x27
+ 1127 00bd 19       		.uleb128 0x19
+ 1128 00be 11       		.uleb128 0x11
+ 1129 00bf 01       		.uleb128 0x1
+ 1130 00c0 12       		.uleb128 0x12
+ 1131 00c1 06       		.uleb128 0x6
+ 1132 00c2 40       		.uleb128 0x40
+ 1133 00c3 18       		.uleb128 0x18
+ 1134 00c4 9642     		.uleb128 0x2116
+ 1135 00c6 19       		.uleb128 0x19
+ 1136 00c7 01       		.uleb128 0x1
+ 1137 00c8 13       		.uleb128 0x13
+ 1138 00c9 00       		.byte	0
+ 1139 00ca 00       		.byte	0
+ 1140 00cb 0D       		.uleb128 0xd
+ 1141 00cc 34       		.uleb128 0x34
+ 1142 00cd 00       		.byte	0
+ 1143 00ce 03       		.uleb128 0x3
+ 1144 00cf 08       		.uleb128 0x8
+ 1145 00d0 3A       		.uleb128 0x3a
+ 1146 00d1 0B       		.uleb128 0xb
+ 1147 00d2 3B       		.uleb128 0x3b
+ 1148 00d3 0B       		.uleb128 0xb
+ 1149 00d4 49       		.uleb128 0x49
+ 1150 00d5 13       		.uleb128 0x13
+ 1151 00d6 02       		.uleb128 0x2
+ 1152 00d7 17       		.uleb128 0x17
+ 1153 00d8 00       		.byte	0
+ 1154 00d9 00       		.byte	0
+ 1155 00da 0E       		.uleb128 0xe
+ 1156 00db 2E       		.uleb128 0x2e
+ 1157 00dc 01       		.byte	0x1
+ 1158 00dd 3F       		.uleb128 0x3f
+ 1159 00de 19       		.uleb128 0x19
+ 1160 00df 03       		.uleb128 0x3
+ 1161 00e0 0E       		.uleb128 0xe
+ 1162 00e1 3A       		.uleb128 0x3a
+ 1163 00e2 0B       		.uleb128 0xb
+ 1164 00e3 3B       		.uleb128 0x3b
+ 1165 00e4 0B       		.uleb128 0xb
+ 1166 00e5 27       		.uleb128 0x27
+ 1167 00e6 19       		.uleb128 0x19
+ARM GAS  C:\Users\JANUSD~1\AppData\Local\Temp\ccEwIFdT.s 			page 24
+
+
+ 1168 00e7 49       		.uleb128 0x49
+ 1169 00e8 13       		.uleb128 0x13
+ 1170 00e9 8701     		.uleb128 0x87
+ 1171 00eb 19       		.uleb128 0x19
+ 1172 00ec 11       		.uleb128 0x11
+ 1173 00ed 01       		.uleb128 0x1
+ 1174 00ee 12       		.uleb128 0x12
+ 1175 00ef 06       		.uleb128 0x6
+ 1176 00f0 40       		.uleb128 0x40
+ 1177 00f1 18       		.uleb128 0x18
+ 1178 00f2 9642     		.uleb128 0x2116
+ 1179 00f4 19       		.uleb128 0x19
+ 1180 00f5 01       		.uleb128 0x1
+ 1181 00f6 13       		.uleb128 0x13
+ 1182 00f7 00       		.byte	0
+ 1183 00f8 00       		.byte	0
+ 1184 00f9 0F       		.uleb128 0xf
+ 1185 00fa 34       		.uleb128 0x34
+ 1186 00fb 00       		.byte	0
+ 1187 00fc 03       		.uleb128 0x3
+ 1188 00fd 08       		.uleb128 0x8
+ 1189 00fe 3A       		.uleb128 0x3a
+ 1190 00ff 0B       		.uleb128 0xb
+ 1191 0100 3B       		.uleb128 0x3b
+ 1192 0101 0B       		.uleb128 0xb
+ 1193 0102 49       		.uleb128 0x49
+ 1194 0103 13       		.uleb128 0x13
+ 1195 0104 00       		.byte	0
+ 1196 0105 00       		.byte	0
+ 1197 0106 10       		.uleb128 0x10
+ 1198 0107 34       		.uleb128 0x34
+ 1199 0108 00       		.byte	0
+ 1200 0109 03       		.uleb128 0x3
+ 1201 010a 0E       		.uleb128 0xe
+ 1202 010b 3A       		.uleb128 0x3a
+ 1203 010c 0B       		.uleb128 0xb
+ 1204 010d 3B       		.uleb128 0x3b
+ 1205 010e 0B       		.uleb128 0xb
+ 1206 010f 49       		.uleb128 0x49
+ 1207 0110 13       		.uleb128 0x13
+ 1208 0111 00       		.byte	0
+ 1209 0112 00       		.byte	0
+ 1210 0113 11       		.uleb128 0x11
+ 1211 0114 898201   		.uleb128 0x4109
+ 1212 0117 01       		.byte	0x1
+ 1213 0118 11       		.uleb128 0x11
+ 1214 0119 01       		.uleb128 0x1
+ 1215 011a 31       		.uleb128 0x31
+ 1216 011b 13       		.uleb128 0x13
+ 1217 011c 01       		.uleb128 0x1
+ 1218 011d 13       		.uleb128 0x13
+ 1219 011e 00       		.byte	0
+ 1220 011f 00       		.byte	0
+ 1221 0120 12       		.uleb128 0x12
+ 1222 0121 8A8201   		.uleb128 0x410a
+ 1223 0124 00       		.byte	0
+ 1224 0125 02       		.uleb128 0x2
+ARM GAS  C:\Users\JANUSD~1\AppData\Local\Temp\ccEwIFdT.s 			page 25
+
+
+ 1225 0126 18       		.uleb128 0x18
+ 1226 0127 9142     		.uleb128 0x2111
+ 1227 0129 18       		.uleb128 0x18
+ 1228 012a 00       		.byte	0
+ 1229 012b 00       		.byte	0
+ 1230 012c 13       		.uleb128 0x13
+ 1231 012d 898201   		.uleb128 0x4109
+ 1232 0130 01       		.byte	0x1
+ 1233 0131 11       		.uleb128 0x11
+ 1234 0132 01       		.uleb128 0x1
+ 1235 0133 31       		.uleb128 0x31
+ 1236 0134 13       		.uleb128 0x13
+ 1237 0135 00       		.byte	0
+ 1238 0136 00       		.byte	0
+ 1239 0137 14       		.uleb128 0x14
+ 1240 0138 01       		.uleb128 0x1
+ 1241 0139 01       		.byte	0x1
+ 1242 013a 49       		.uleb128 0x49
+ 1243 013b 13       		.uleb128 0x13
+ 1244 013c 01       		.uleb128 0x1
+ 1245 013d 13       		.uleb128 0x13
+ 1246 013e 00       		.byte	0
+ 1247 013f 00       		.byte	0
+ 1248 0140 15       		.uleb128 0x15
+ 1249 0141 21       		.uleb128 0x21
+ 1250 0142 00       		.byte	0
+ 1251 0143 49       		.uleb128 0x49
+ 1252 0144 13       		.uleb128 0x13
+ 1253 0145 2F       		.uleb128 0x2f
+ 1254 0146 0B       		.uleb128 0xb
+ 1255 0147 00       		.byte	0
+ 1256 0148 00       		.byte	0
+ 1257 0149 16       		.uleb128 0x16
+ 1258 014a 35       		.uleb128 0x35
+ 1259 014b 00       		.byte	0
+ 1260 014c 49       		.uleb128 0x49
+ 1261 014d 13       		.uleb128 0x13
+ 1262 014e 00       		.byte	0
+ 1263 014f 00       		.byte	0
+ 1264 0150 17       		.uleb128 0x17
+ 1265 0151 34       		.uleb128 0x34
+ 1266 0152 00       		.byte	0
+ 1267 0153 03       		.uleb128 0x3
+ 1268 0154 0E       		.uleb128 0xe
+ 1269 0155 3A       		.uleb128 0x3a
+ 1270 0156 0B       		.uleb128 0xb
+ 1271 0157 3B       		.uleb128 0x3b
+ 1272 0158 0B       		.uleb128 0xb
+ 1273 0159 49       		.uleb128 0x49
+ 1274 015a 13       		.uleb128 0x13
+ 1275 015b 3F       		.uleb128 0x3f
+ 1276 015c 19       		.uleb128 0x19
+ 1277 015d 3C       		.uleb128 0x3c
+ 1278 015e 19       		.uleb128 0x19
+ 1279 015f 00       		.byte	0
+ 1280 0160 00       		.byte	0
+ 1281 0161 18       		.uleb128 0x18
+ARM GAS  C:\Users\JANUSD~1\AppData\Local\Temp\ccEwIFdT.s 			page 26
+
+
+ 1282 0162 34       		.uleb128 0x34
+ 1283 0163 00       		.byte	0
+ 1284 0164 03       		.uleb128 0x3
+ 1285 0165 0E       		.uleb128 0xe
+ 1286 0166 3A       		.uleb128 0x3a
+ 1287 0167 0B       		.uleb128 0xb
+ 1288 0168 3B       		.uleb128 0x3b
+ 1289 0169 0B       		.uleb128 0xb
+ 1290 016a 49       		.uleb128 0x49
+ 1291 016b 13       		.uleb128 0x13
+ 1292 016c 3F       		.uleb128 0x3f
+ 1293 016d 19       		.uleb128 0x19
+ 1294 016e 02       		.uleb128 0x2
+ 1295 016f 18       		.uleb128 0x18
+ 1296 0170 00       		.byte	0
+ 1297 0171 00       		.byte	0
+ 1298 0172 19       		.uleb128 0x19
+ 1299 0173 26       		.uleb128 0x26
+ 1300 0174 00       		.byte	0
+ 1301 0175 49       		.uleb128 0x49
+ 1302 0176 13       		.uleb128 0x13
+ 1303 0177 00       		.byte	0
+ 1304 0178 00       		.byte	0
+ 1305 0179 1A       		.uleb128 0x1a
+ 1306 017a 2E       		.uleb128 0x2e
+ 1307 017b 00       		.byte	0
+ 1308 017c 3F       		.uleb128 0x3f
+ 1309 017d 19       		.uleb128 0x19
+ 1310 017e 3C       		.uleb128 0x3c
+ 1311 017f 19       		.uleb128 0x19
+ 1312 0180 6E       		.uleb128 0x6e
+ 1313 0181 0E       		.uleb128 0xe
+ 1314 0182 03       		.uleb128 0x3
+ 1315 0183 0E       		.uleb128 0xe
+ 1316 0184 3A       		.uleb128 0x3a
+ 1317 0185 0B       		.uleb128 0xb
+ 1318 0186 3B       		.uleb128 0x3b
+ 1319 0187 0B       		.uleb128 0xb
+ 1320 0188 00       		.byte	0
+ 1321 0189 00       		.byte	0
+ 1322 018a 1B       		.uleb128 0x1b
+ 1323 018b 2E       		.uleb128 0x2e
+ 1324 018c 00       		.byte	0
+ 1325 018d 3F       		.uleb128 0x3f
+ 1326 018e 19       		.uleb128 0x19
+ 1327 018f 3C       		.uleb128 0x3c
+ 1328 0190 19       		.uleb128 0x19
+ 1329 0191 6E       		.uleb128 0x6e
+ 1330 0192 0E       		.uleb128 0xe
+ 1331 0193 03       		.uleb128 0x3
+ 1332 0194 0E       		.uleb128 0xe
+ 1333 0195 3A       		.uleb128 0x3a
+ 1334 0196 0B       		.uleb128 0xb
+ 1335 0197 3B       		.uleb128 0x3b
+ 1336 0198 05       		.uleb128 0x5
+ 1337 0199 00       		.byte	0
+ 1338 019a 00       		.byte	0
+ARM GAS  C:\Users\JANUSD~1\AppData\Local\Temp\ccEwIFdT.s 			page 27
+
+
+ 1339 019b 00       		.byte	0
+ 1340              		.section	.debug_loc,"",%progbits
+ 1341              	.Ldebug_loc0:
+ 1342              	.LLST0:
+ 1343 0000 00000000 		.4byte	.LVL1
+ 1344 0004 10000000 		.4byte	.LVL4
+ 1345 0008 0100     		.2byte	0x1
+ 1346 000a 50       		.byte	0x50
+ 1347 000b 10000000 		.4byte	.LVL4
+ 1348 000f 2C000000 		.4byte	.LFE36
+ 1349 0013 0400     		.2byte	0x4
+ 1350 0015 F3       		.byte	0xf3
+ 1351 0016 01       		.uleb128 0x1
+ 1352 0017 50       		.byte	0x50
+ 1353 0018 9F       		.byte	0x9f
+ 1354 0019 00000000 		.4byte	0
+ 1355 001d 00000000 		.4byte	0
+ 1356              	.LLST1:
+ 1357 0021 00000000 		.4byte	.LVL1
+ 1358 0025 14000000 		.4byte	.LVL5
+ 1359 0029 0100     		.2byte	0x1
+ 1360 002b 51       		.byte	0x51
+ 1361 002c 14000000 		.4byte	.LVL5
+ 1362 0030 2C000000 		.4byte	.LFE36
+ 1363 0034 0400     		.2byte	0x4
+ 1364 0036 F3       		.byte	0xf3
+ 1365 0037 01       		.uleb128 0x1
+ 1366 0038 51       		.byte	0x51
+ 1367 0039 9F       		.byte	0x9f
+ 1368 003a 00000000 		.4byte	0
+ 1369 003e 00000000 		.4byte	0
+ 1370              	.LLST2:
+ 1371 0042 02000000 		.4byte	.LVL2
+ 1372 0046 0E000000 		.4byte	.LVL3
+ 1373 004a 0100     		.2byte	0x1
+ 1374 004c 51       		.byte	0x51
+ 1375 004d 0E000000 		.4byte	.LVL3
+ 1376 0051 1E000000 		.4byte	.LVL7
+ 1377 0055 0100     		.2byte	0x1
+ 1378 0057 54       		.byte	0x54
+ 1379 0058 1E000000 		.4byte	.LVL7
+ 1380 005c 2C000000 		.4byte	.LFE36
+ 1381 0060 0100     		.2byte	0x1
+ 1382 0062 50       		.byte	0x50
+ 1383 0063 00000000 		.4byte	0
+ 1384 0067 00000000 		.4byte	0
+ 1385              	.LLST3:
+ 1386 006b 00000000 		.4byte	.LVL8
+ 1387 006f 0C000000 		.4byte	.LVL10
+ 1388 0073 0100     		.2byte	0x1
+ 1389 0075 50       		.byte	0x50
+ 1390 0076 0C000000 		.4byte	.LVL10
+ 1391 007a 60000000 		.4byte	.LVL20
+ 1392 007e 0100     		.2byte	0x1
+ 1393 0080 55       		.byte	0x55
+ 1394 0081 00000000 		.4byte	0
+ 1395 0085 00000000 		.4byte	0
+ARM GAS  C:\Users\JANUSD~1\AppData\Local\Temp\ccEwIFdT.s 			page 28
+
+
+ 1396              	.LLST4:
+ 1397 0089 08000000 		.4byte	.LVL9
+ 1398 008d 0C000000 		.4byte	.LVL10
+ 1399 0091 0200     		.2byte	0x2
+ 1400 0093 30       		.byte	0x30
+ 1401 0094 9F       		.byte	0x9f
+ 1402 0095 0C000000 		.4byte	.LVL10
+ 1403 0099 40000000 		.4byte	.LVL14
+ 1404 009d 0100     		.2byte	0x1
+ 1405 009f 54       		.byte	0x54
+ 1406 00a0 42000000 		.4byte	.LVL15
+ 1407 00a4 48000000 		.4byte	.LVL16
+ 1408 00a8 0100     		.2byte	0x1
+ 1409 00aa 54       		.byte	0x54
+ 1410 00ab 4A000000 		.4byte	.LVL17
+ 1411 00af 5A000000 		.4byte	.LVL18
+ 1412 00b3 0100     		.2byte	0x1
+ 1413 00b5 53       		.byte	0x53
+ 1414 00b6 5C000000 		.4byte	.LVL19
+ 1415 00ba 70000000 		.4byte	.LFE38
+ 1416 00be 0100     		.2byte	0x1
+ 1417 00c0 53       		.byte	0x53
+ 1418 00c1 00000000 		.4byte	0
+ 1419 00c5 00000000 		.4byte	0
+ 1420              	.LLST5:
+ 1421 00c9 52000000 		.4byte	.LVL34
+ 1422 00cd 66000000 		.4byte	.LVL37
+ 1423 00d1 0100     		.2byte	0x1
+ 1424 00d3 56       		.byte	0x56
+ 1425 00d4 00000000 		.4byte	0
+ 1426 00d8 00000000 		.4byte	0
+ 1427              		.section	.debug_aranges,"",%progbits
+ 1428 0000 34000000 		.4byte	0x34
+ 1429 0004 0200     		.2byte	0x2
+ 1430 0006 00000000 		.4byte	.Ldebug_info0
+ 1431 000a 04       		.byte	0x4
+ 1432 000b 00       		.byte	0
+ 1433 000c 0000     		.2byte	0
+ 1434 000e 0000     		.2byte	0
+ 1435 0010 00000000 		.4byte	.LFB39
+ 1436 0014 24000000 		.4byte	.LFE39-.LFB39
+ 1437 0018 00000000 		.4byte	.LFB36
+ 1438 001c 2C000000 		.4byte	.LFE36-.LFB36
+ 1439 0020 00000000 		.4byte	.LFB38
+ 1440 0024 70000000 		.4byte	.LFE38-.LFB38
+ 1441 0028 00000000 		.4byte	.LFB37
+ 1442 002c 98000000 		.4byte	.LFE37-.LFB37
+ 1443 0030 00000000 		.4byte	0
+ 1444 0034 00000000 		.4byte	0
+ 1445              		.section	.debug_ranges,"",%progbits
+ 1446              	.Ldebug_ranges0:
+ 1447 0000 00000000 		.4byte	.LFB39
+ 1448 0004 24000000 		.4byte	.LFE39
+ 1449 0008 00000000 		.4byte	.LFB36
+ 1450 000c 2C000000 		.4byte	.LFE36
+ 1451 0010 00000000 		.4byte	.LFB38
+ 1452 0014 70000000 		.4byte	.LFE38
+ARM GAS  C:\Users\JANUSD~1\AppData\Local\Temp\ccEwIFdT.s 			page 29
+
+
+ 1453 0018 00000000 		.4byte	.LFB37
+ 1454 001c 98000000 		.4byte	.LFE37
+ 1455 0020 00000000 		.4byte	0
+ 1456 0024 00000000 		.4byte	0
+ 1457              		.section	.debug_line,"",%progbits
+ 1458              	.Ldebug_line0:
+ 1459 0000 43020000 		.section	.debug_str,"MS",%progbits,1
+ 1459      02009001 
+ 1459      00000201 
+ 1459      FB0E0D00 
+ 1459      01010101 
+ 1460              	.LASF27:
+ 1461 0000 61646352 		.ascii	"adcResult_V\000"
+ 1461      6573756C 
+ 1461      745F5600 
+ 1462              	.LASF20:
+ 1463 000c 6368616E 		.ascii	"channel\000"
+ 1463      6E656C00 
+ 1464              	.LASF46:
+ 1465 0014 4144435F 		.ascii	"ADC_SAR_Seq_CountsTo_mVolts\000"
+ 1465      5341525F 
+ 1465      5365715F 
+ 1465      436F756E 
+ 1465      7473546F 
+ 1466              	.LASF15:
+ 1467 0030 666C6F61 		.ascii	"float\000"
+ 1467      7400
+ 1468              	.LASF35:
+ 1469 0036 5350494D 		.ascii	"SPIM_WriteTxData\000"
+ 1469      5F577269 
+ 1469      74655478 
+ 1469      44617461 
+ 1469      00
+ 1470              	.LASF3:
+ 1471 0047 73686F72 		.ascii	"short unsigned int\000"
+ 1471      7420756E 
+ 1471      7369676E 
+ 1471      65642069 
+ 1471      6E7400
+ 1472              	.LASF32:
+ 1473 005a 696E6479 		.ascii	"indyk\000"
+ 1473      6B00
+ 1474              	.LASF40:
+ 1475 0060 55415254 		.ascii	"UART_UartPutString\000"
+ 1475      5F556172 
+ 1475      74507574 
+ 1475      53747269 
+ 1475      6E6700
+ 1476              	.LASF34:
+ 1477 0073 74656D70 		.ascii	"temperature\000"
+ 1477      65726174 
+ 1477      75726500 
+ 1478              	.LASF26:
+ 1479 007f 64617461 		.ascii	"data\000"
+ 1479      00
+ 1480              	.LASF11:
+ 1481 0084 75696E74 		.ascii	"uint8\000"
+ARM GAS  C:\Users\JANUSD~1\AppData\Local\Temp\ccEwIFdT.s 			page 30
+
+
+ 1481      3800
+ 1482              	.LASF43:
+ 1483 008a 4144435F 		.ascii	"ADC_SAR_Seq_IsEndConversion\000"
+ 1483      5341525F 
+ 1483      5365715F 
+ 1483      4973456E 
+ 1483      64436F6E 
+ 1484              	.LASF37:
+ 1485 00a6 6973725F 		.ascii	"isr_100Hz_StartEx\000"
+ 1485      31303048 
+ 1485      7A5F5374 
+ 1485      61727445 
+ 1485      7800
+ 1486              	.LASF13:
+ 1487 00b8 696E7431 		.ascii	"int16\000"
+ 1487      3600
+ 1488              	.LASF5:
+ 1489 00be 6C6F6E67 		.ascii	"long unsigned int\000"
+ 1489      20756E73 
+ 1489      69676E65 
+ 1489      6420696E 
+ 1489      7400
+ 1490              	.LASF14:
+ 1491 00d0 696E7433 		.ascii	"int32\000"
+ 1491      3200
+ 1492              	.LASF39:
+ 1493 00d6 55415254 		.ascii	"UART_Start\000"
+ 1493      5F537461 
+ 1493      727400
+ 1494              	.LASF22:
+ 1495 00e1 4E5F696E 		.ascii	"N_indyk\000"
+ 1495      64796B00 
+ 1496              	.LASF51:
+ 1497 00e9 4D795F43 		.ascii	"My_CountsTo_mVolts\000"
+ 1497      6F756E74 
+ 1497      73546F5F 
+ 1497      6D566F6C 
+ 1497      747300
+ 1498              	.LASF1:
+ 1499 00fc 756E7369 		.ascii	"unsigned char\000"
+ 1499      676E6564 
+ 1499      20636861 
+ 1499      7200
+ 1500              	.LASF9:
+ 1501 010a 5F5F7569 		.ascii	"__uint16_t\000"
+ 1501      6E743136 
+ 1501      5F7400
+ 1502              	.LASF16:
+ 1503 0115 646F7562 		.ascii	"double\000"
+ 1503      6C6500
+ 1504              	.LASF23:
+ 1505 011c 61646352 		.ascii	"adcResult_mV\000"
+ 1505      6573756C 
+ 1505      745F6D56 
+ 1505      00
+ 1506              	.LASF44:
+ 1507 0129 4144435F 		.ascii	"ADC_SAR_Seq_GetResult16\000"
+ARM GAS  C:\Users\JANUSD~1\AppData\Local\Temp\ccEwIFdT.s 			page 31
+
+
+ 1507      5341525F 
+ 1507      5365715F 
+ 1507      47657452 
+ 1507      6573756C 
+ 1508              	.LASF12:
+ 1509 0141 75696E74 		.ascii	"uint16\000"
+ 1509      313600
+ 1510              	.LASF24:
+ 1511 0148 6973725F 		.ascii	"isr_100Hz\000"
+ 1511      31303048 
+ 1511      7A00
+ 1512              	.LASF41:
+ 1513 0152 4144435F 		.ascii	"ADC_SAR_Seq_StartConvert\000"
+ 1513      5341525F 
+ 1513      5365715F 
+ 1513      53746172 
+ 1513      74436F6E 
+ 1514              	.LASF31:
+ 1515 016b 4144435F 		.ascii	"ADC_SAR_Seq_countsPer10Volt\000"
+ 1515      5341525F 
+ 1515      5365715F 
+ 1515      636F756E 
+ 1515      74735065 
+ 1516              	.LASF8:
+ 1517 0187 756E7369 		.ascii	"unsigned int\000"
+ 1517      676E6564 
+ 1517      20696E74 
+ 1517      00
+ 1518              	.LASF29:
+ 1519 0194 6D795F61 		.ascii	"my_adcResult_mV\000"
+ 1519      64635265 
+ 1519      73756C74 
+ 1519      5F6D5600 
+ 1520              	.LASF7:
+ 1521 01a4 6C6F6E67 		.ascii	"long long unsigned int\000"
+ 1521      206C6F6E 
+ 1521      6720756E 
+ 1521      7369676E 
+ 1521      65642069 
+ 1522              	.LASF36:
+ 1523 01bb 5350494D 		.ascii	"SPIM_Start\000"
+ 1523      5F537461 
+ 1523      727400
+ 1524              	.LASF38:
+ 1525 01c6 4144435F 		.ascii	"ADC_SAR_Seq_Start\000"
+ 1525      5341525F 
+ 1525      5365715F 
+ 1525      53746172 
+ 1525      7400
+ 1526              	.LASF47:
+ 1527 01d8 4144435F 		.ascii	"ADC_SAR_Seq_CountsTo_uVolts\000"
+ 1527      5341525F 
+ 1527      5365715F 
+ 1527      436F756E 
+ 1527      7473546F 
+ 1528              	.LASF48:
+ 1529 01f4 474E5520 		.ascii	"GNU C11 5.4.1 20160609 (release) [ARM/embedded-5-br"
+ARM GAS  C:\Users\JANUSD~1\AppData\Local\Temp\ccEwIFdT.s 			page 32
+
+
+ 1529      43313120 
+ 1529      352E342E 
+ 1529      31203230 
+ 1529      31363036 
+ 1530 0227 616E6368 		.ascii	"anch revision 237715] -mcpu=cortex-m0 -mthumb -g -O"
+ 1530      20726576 
+ 1530      6973696F 
+ 1530      6E203233 
+ 1530      37373135 
+ 1531 025a 67202D66 		.ascii	"g -ffunction-sections -ffat-lto-objects\000"
+ 1531      66756E63 
+ 1531      74696F6E 
+ 1531      2D736563 
+ 1531      74696F6E 
+ 1532              	.LASF21:
+ 1533 0282 61646352 		.ascii	"adcResult\000"
+ 1533      6573756C 
+ 1533      7400
+ 1534              	.LASF19:
+ 1535 028c 73697A65 		.ascii	"sizetype\000"
+ 1535      74797065 
+ 1535      00
+ 1536              	.LASF28:
+ 1537 0295 61646352 		.ascii	"adcResult_uV\000"
+ 1537      6573756C 
+ 1537      745F7556 
+ 1537      00
+ 1538              	.LASF50:
+ 1539 02a2 433A5C55 		.ascii	"C:\\Users\\janusdg-win\\UCU\\POC\\_Tasks\\Design_Ta"
+ 1539      73657273 
+ 1539      5C6A616E 
+ 1539      75736467 
+ 1539      2D77696E 
+ 1540 02cf 736B5F30 		.ascii	"sk_02.cydsn\000"
+ 1540      322E6379 
+ 1540      64736E00 
+ 1541              	.LASF6:
+ 1542 02db 6C6F6E67 		.ascii	"long long int\000"
+ 1542      206C6F6E 
+ 1542      6720696E 
+ 1542      7400
+ 1543              	.LASF49:
+ 1544 02e9 6D61696E 		.ascii	"main.c\000"
+ 1544      2E6300
+ 1545              	.LASF17:
+ 1546 02f0 63686172 		.ascii	"char\000"
+ 1546      00
+ 1547              	.LASF45:
+ 1548 02f5 4144435F 		.ascii	"ADC_SAR_Seq_CountsTo_Volts\000"
+ 1548      5341525F 
+ 1548      5365715F 
+ 1548      436F756E 
+ 1548      7473546F 
+ 1549              	.LASF25:
+ 1550 0310 6F757437 		.ascii	"out7seg\000"
+ 1550      73656700 
+ 1551              	.LASF2:
+ARM GAS  C:\Users\JANUSD~1\AppData\Local\Temp\ccEwIFdT.s 			page 33
+
+
+ 1552 0318 73686F72 		.ascii	"short int\000"
+ 1552      7420696E 
+ 1552      7400
+ 1553              	.LASF52:
+ 1554 0322 6D61696E 		.ascii	"main\000"
+ 1554      00
+ 1555              	.LASF10:
+ 1556 0327 75696E74 		.ascii	"uint16_t\000"
+ 1556      31365F74 
+ 1556      00
+ 1557              	.LASF4:
+ 1558 0330 6C6F6E67 		.ascii	"long int\000"
+ 1558      20696E74 
+ 1558      00
+ 1559              	.LASF33:
+ 1560 0339 4B4F4437 		.ascii	"KOD7\000"
+ 1560      00
+ 1561              	.LASF18:
+ 1562 033e 6C6F6E67 		.ascii	"long double\000"
+ 1562      20646F75 
+ 1562      626C6500 
+ 1563              	.LASF0:
+ 1564 034a 7369676E 		.ascii	"signed char\000"
+ 1564      65642063 
+ 1564      68617200 
+ 1565              	.LASF30:
+ 1566 0356 4144435F 		.ascii	"ADC_SAR_Seq_offset\000"
+ 1566      5341525F 
+ 1566      5365715F 
+ 1566      6F666673 
+ 1566      657400
+ 1567              	.LASF42:
+ 1568 0369 43794465 		.ascii	"CyDelay\000"
+ 1568      6C617900 
+ 1569              		.ident	"GCC: (GNU Tools for ARM Embedded Processors) 5.4.1 20160609 (release) [ARM/embedded-5-bran
